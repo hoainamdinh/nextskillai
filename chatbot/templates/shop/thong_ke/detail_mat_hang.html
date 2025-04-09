@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Chi tiết mặt hàng</h1>
+<p>Mã mặt hàng: {{ mat_hang.ma_mat_hang }}</p>
+<p>Tên mặt hàng: {{ mat_hang.ten_mat_hang }}</p>
+<p>Mã nhóm hàng: {{ mat_hang.ma_nhom_hang }}</p>
+<p>Đơn giá: {{ mat_hang.don_gia }}</p>
+<h2>Danh sách khách hàng đã mua</h2>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Thời gian tạo đơn</th>
+            <th>Mã Đơn Hàng</th>
+            <th>Mã Khách Hàng</th>
+            <th>Tên Khách Hàng</th>
+            <th>Sản Phẩm</th>
+            <th>Số Lượng</th>
+            <th>Đơn Giá</th>
+            <th>Thành Tiền</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for don_hang in list_don_hang %}
+        <td>{{ don_hang.thoi_gian_tao_don }}</td>
+        <td>{{ don_hang.ma_don_hang }}</td>
+        <td>{{ don_hang.ma_khach_hang }}</td>
+        <td>{{ don_hang.khach_hang }}</td>
+        <td>{{ don_hang.ten_mat_hang }}</td>
+        <td>{{ don_hang.so_luong }}</td>
+        <td>{{ don_hang.don_gia }}</td>
+        <td>{{ don_hang.thanh_tien }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+

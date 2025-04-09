@@ -1,0 +1,92 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2>Thêm đơn hàng</h2>
+<form id="orderform" method="POST">
+    {% csrf_token %}
+    
+    <label for="ma_khach_hang">Mã Khách Hàng:</label>
+    <select id="ma_khach_hang" name="ma_khach_hang" class="form-control">
+        <option value="">-- Chọn khách hàng --</option>
+        {% for kh in list_khach_hang %}
+            <option value="{{ kh.ma_khach_hang }}">{{ kh.ma_khach_hang }} - {{ kh.ten_khach_hang }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="ten_khach_hang">Tên Khách Hàng:</label>
+    <input type="text" id="ten_khach_hang" name="ten_khach_hang" class="form-control" readonly>
+
+    <label for="ma_pkkh">Mã Phân Khúc:</label>
+    <input type="text" id="ma_pkkh" name="ma_pkkh" class="form-control" readonly>
+
+    <label for="mo_ta_pkkh">Mô Tả Phân Khúc:</label>
+    <input type="text" id="mo_ta_pkkh" name="mo_ta_pkkh" class="form-control" readonly>
+
+    <label for="ma_mat_hang">Mã Mặt Hàng:</label>
+    <select id="ma_mat_hang" name="ma_mat_hang" class="form-control">
+        <option value="">-- Chọn mặt hàng --</option>
+        {% for mh in list_mat_hang %}
+            <option value="{{ mh.ma_mat_hang }}">{{ mh.ma_mat_hang }} - {{ mh.ten_mat_hang }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="ten_mat_hang">Tên Mặt Hàng:</label>
+    <input type="text" id="ten_mat_hang" name="ten_mat_hang" class="form-control">
+
+    <label for="don_gia">Đơn Giá:</label>
+    <input type="text" id="don_gia" name="don_gia" class="form-control" >
+
+    <label for="ma_nhom_hang">Mã Nhóm Hàng:</label>
+    <input type="text" id="ma_nhom_hang" name="ma_nhom_hang" class="form-control" >
+
+    <label for="ten_nhom_hang">Tên Nhóm Hàng:</label>
+    <input type="text" id="ten_nhom_hang" name="ten_nhom_hang" class="form-control">
+
+    <label for="so_luong">Số Lượng:</label>
+    <input type="number" id="so_luong" name="so_luong" class="form-control" required>
+
+    <br>
+    
+    <button type="submit" class="btn btn-primary">Thêm Đơn Hàng</button>
+</form>
+
+<script>
+    document.getElementById('ma_khach_hang').addEventListener('change', function() {
+        const maKhachHang = this.value;
+        if (maKhachHang) {
+            fetch(`/shop/get_khach_hang_info/${maKhachHang}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('ten_khach_hang').value = data.ten_khach_hang;
+                    document.getElementById('ma_pkkh').value = data.ma_pkkh;
+                    document.getElementById('mo_ta_pkkh').value = data.mo_ta_pkkh;
+                })
+                .catch(error => console.error(error));
+        } else {
+            document.getElementById('ten_khach_hang').value = '';
+            document.getElementById('ma_pkkh').value = '';
+            document.getElementById('mo_ta_pkkh').value = '';
+        }
+    });
+    
+    document.getElementById('ma_mat_hang').addEventListener('change', function() {
+        const maMatHang = this.value;
+        if (maMatHang) {
+            fetch(`/shop/get_mat_hang_info/${maMatHang}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('ten_mat_hang').value = data.ten_mat_hang;
+                    document.getElementById('don_gia').value = data.don_gia;
+                    document.getElementById('ma_nhom_hang').value = data.ma_nhom_hang;
+                    document.getElementById('ten_nhom_hang').value = data.ten_nhom_hang;
+                })
+                .catch(error => console.error(error));
+        } else {
+            document.getElementById('ten_mat_hang').value = '';
+            document.getElementById('don_gia').value = '';
+            document.getElementById('ma_nhom_hang').value = '';
+            document.getElementById('ten_nhom_hang').value = '';
+        }
+    });
+    </script>
+
+{% endblock %}

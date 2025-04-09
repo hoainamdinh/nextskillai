@@ -1,0 +1,10 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h2>Xác nhận xóa</h2>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Xóa</button>
+    <a href="{% url 'shop:list_khach_hang' %}" class="btn btn-secondary">Hủy</a>
+</form>
+{% endblock %}

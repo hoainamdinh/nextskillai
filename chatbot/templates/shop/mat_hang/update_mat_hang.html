@@ -1,0 +1,26 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <h2>Sửa Mặt Hàng</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        <label for="ma_mat_hang">Mã Mặt Hàng:</label>
+        <a type="text" class="form-control" style="width: 50%; text-decoration: none;" name="ma_mat_hang">{{ mat_hang.ma_mat_hang }}</a>
+
+        <label for="ten_mat_hang">Tên Mặt Hàng:</label>
+        <input type="text" class="form-control" style="width: 50%;" name="ten_mat_hang" value="{{ mat_hang.ten_mat_hang }}">
+
+        <label for="ma_nhom_hang">Mã Nhóm Hàng:</label>
+        <select class="form-control" style="width: 50%;" name="ma_nhom_hang" required>
+            {% for nhom in nhom_hang %}
+                <option value="{{ nhom.ma_nhom_hang }}">{{ nhom.ma_nhom_hang }}</option>
+            {% endfor %}  
+        </select>
+
+        <label for="don_gia">Đơn Giá:</label>
+        <input type="number" class="form-control" style="width: 50%;" name="don_gia">
+        <br>
+        <button type="submit" class="btn btn-primary">Update</button>
+        </form>
+{% endblock %}

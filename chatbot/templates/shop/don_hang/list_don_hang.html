@@ -1,0 +1,47 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h2>Danh Sách Đơn Hàng</h2>
+<a class="btn btn-primary" href="{% url 'shop:them_don_hang' %}">Thêm đơn hàng</a>
+<br><br>
+<a class="btn btn-primary" href="{% url 'shop:upload_don_hang' %}">Upload đơn hàng</a>
+<br>
+    <br>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Thời gian tạo đơn</th>
+                <th>Mã Đơn Hàng</th>
+                <th>Mã Khách Hàng</th>
+                <th>Tên Khách Hàng</th>
+                <th>Mã PKKH</th>
+                <th>Mã nhóm hàng</th>
+                <th>Tên nhóm hàng</th>
+                <th>Mã mặt hàng</th>
+                <th>Tên mặt hàng</th>
+                <th>Số Lượng</th>
+                <th>Đơn Giá</th>
+                <th>Thành Tiền</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for don_hang in list_don_hang %}
+            <td>{{ don_hang.thoi_gian_tao_don }}</td>
+            <td>{{ don_hang.ma_don_hang }}</td>
+            <td>{{ don_hang.ma_khach_hang }}</td>
+            <td>{{ don_hang.khach_hang }}</td>
+            <td>{{ don_hang.ma_pkkh }}</td>
+            <td>{{ don_hang.ma_nhom_hang }}</td>
+            <td>{{ don_hang.ten_nhom_hang }}</td>
+            <td>{{ don_hang.ma_mat_hang }}</td>
+            <td>{{ don_hang.ten_mat_hang }}</td>
+            <td>{{ don_hang.so_luong }}</td>
+            <td>{{ don_hang.don_gia }}</td>
+            <td>{{ don_hang.thanh_tien }}</td>
+            <td><a href="{% url 'shop:delete_don_hang' don_hang.ma_don_hang %}">Delete</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

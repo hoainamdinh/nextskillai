@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+    <h2>Upload CSV hoặc Excel</h2>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <p style="color: {% if message.tags == 'error' %} red {% else %} green {% endif %};">
+                {{ message }}
+            </p>    
+        {% endfor %}
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="file" class="form-control" style="width: 50%">
+        <br><br>
+        <button type="submit" class="btn btn-primary">Upload</button>
+    </form>
+
+
+{% endblock %}

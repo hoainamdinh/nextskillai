@@ -1,0 +1,31 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h2>Danh Sách Khách Hàng</h2>
+<a class="btn btn-primary" href="{% url 'shop:them_khach_hang' %}">Thêm Khách Hàng</a>
+<br><br>
+<a class="btn btn-primary" href="{% url 'shop:upload_khach_hang' %}">Upload Khách Hàng</a>
+<br>
+    <br>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Mã Khách Hàng</th>
+                <th>Tên Khách Hàng</th>
+                <th>Mã Phân Khúc</th>
+            </tr>   
+        </thead>
+        <tbody>
+            {% for kh in list_khach_hang %}
+            <tr>
+                <td>{{ kh.ma_khach_hang }}</td>
+                <td><a href="{% url 'shop:detail_khach_hang' kh.ma_khach_hang %}">{{ kh.ten_khach_hang }}</a></td>
+                <td>{{ kh.phan_khuc }}</td>
+                <td><a href="{% url 'shop:update_khach_hang' kh.ma_khach_hang %}">Update</a></td>
+                <td><a href="{% url 'shop:delete_khach_hang' kh.ma_khach_hang %}">Delete</a></td>
+                <td></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

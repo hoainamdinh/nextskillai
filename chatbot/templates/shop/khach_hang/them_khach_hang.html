@@ -1,0 +1,24 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+  <h2>Thêm Khách Hàng</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    <!-- <label for="ma_khach_hang">Mã Khách Hàng:</label>
+    <input type="text" class="form-control" style="width: 50%;" name="ma_khach_hang" readonly> -->
+
+    <label for="ten_khach_hang">Tên Khách Hàng:</label>
+    <input type="text" class="form-control" style="width: 50%;" name="ten_khach_hang" required>
+
+    <label for="phan_khuc">Mã Nhóm Hàng:</label>
+    <select class="form-control" style="width: 50%;" name="phan_khuc" required>
+        {% for pkkh in list_pkkh %}
+            <option value="{{ pkkh.ma_pkkh }}">{{ pkkh.mo_ta_pkkh }}</option>
+        {% endfor %}  
+    </select>
+    <br>
+
+    <button type="submit" class="btn btn-primary">Lưu</button>
+{% endblock %}
+      

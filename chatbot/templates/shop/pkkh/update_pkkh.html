@@ -1,0 +1,18 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <h2>Sửa PKKH</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <label for="ma_pkkh">Mã PKKH:</label>
+        <input type="text" class="form-control" style="width: 50%;" name="ma_pkkh" value="{{ pkkh.ma_pkkh }}" readonly>
+
+
+        <label for="mo_ta_pkkh">Mô Tả PKKH:</label>
+        <textarea name="mo_ta_pkkh" class="form-control" style="width: 50%; height: auto; min-height: 150px;">{{ pkkh.mo_ta_pkkh }}</textarea>
+        <br>
+        <button type="submit" class="btn btn-primary">Update</button>
+        </form>
+{% endblock %}

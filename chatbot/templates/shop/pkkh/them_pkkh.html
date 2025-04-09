@@ -1,0 +1,17 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+  <h2>Thêm Phân Khúc Khách Hàng</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    <label for="ma_pkkh">Mã PKKH:</label>
+    <input type="text" class="form-control" style="width: 50%;" name="ma_pkkh" required>
+
+    <label for="mo_ta_pkkh">Mô tả PKKH:</label>
+    <input type="text" class="form-control" style="width: 50%;" name="mo_ta_pkkh" required>
+    <br>
+
+    <button type="submit" class="btn btn-primary">Lưu</button>
+{% endblock %}
+      
