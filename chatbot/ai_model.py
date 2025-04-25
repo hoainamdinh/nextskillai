@@ -2,96 +2,30 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel
 import json
+import pandas as pd
+import os
+from .utils import Recommendation_model
 
 # Định nghĩa cấu trúc dữ liệu cho các kỹ năng
-class DataScienceModel(BaseModel):
-    python: int = 0
-    sql: int = 0
-    machine_learning: int = 0
-    deep_learning: int = 0
-    data_visualization: int = 0
-    statistics: int = 0
-    big_data_tools: int = 0
-    etl_data_pipeline: int = 0
-    business_knowledge: int = 0
-    communication: int = 0
-    ab_testing: int = 0
-    cloud_platforms: int = 0
-    excel: int = 0
-    tableau_power_bi: int = 0
-    nlp: int = 0
-    computer_vision: int = 0
-    bioinformatics: int = 0
-    time_series_analysis: int = 0
-    data_cleaning: int = 0
-    storytelling_with_data: int = 0
-    problem_solving: int = 0
-    critical_thinking: int = 0
-    collaboration: int = 0
-    project_management: int = 0
-    adaptability: int = 0
-    # Các trường hợp có thể xảy ra
 
-industry = None
-class DSProcessModel(BaseModel):
-    python: int
-    sql: int
-    machine_learning: int
-    deep_learning: int
-    data_visualization: int
-    statistics: int
-    big_data_tools: int
-    etl_data_pipeline: int
-    business_knowledge: int
-    communication: int
-    ab_testing: int
-    cloud_platforms: int
-    excel: int
-    tableau_power_bi: int
-    nlp: int
-    computer_vision: int
-    bioinformatics: int
-    time_series_analysis: int
-    data_cleaning: int
-    storytelling_with_data: int
-    problem_solving: int
-    critical_thinking: int
-    collaboration: int
-    project_management: int
-    adaptability: int
-    # Các trường hợp có thể xảy ra
-
-# Bộ kỹ năng tham chiếu theo ngành nghề
-industry_skill_map = {
-    "Data Analyst": DataScienceModel(python=3, sql=4, data_visualization=4, statistics=3),
-    "Data Scientist": DataScienceModel(python=4, sql=3, data_visualization=3, statistics=4, machine_learning=4, deep_learning=3),
-    "Machine Learning Engineer": DataScienceModel(python=4, sql=3, machine_learning=5, deep_learning=4),
-}
 
 # Khởi tạo API key và client Google GenAI
 apikey = "AIzaSyCC_s9QxeNr2bOSW_ovqHYdJH65MJIQdow"
 client = genai.Client(api_key=apikey)
 
-session_state = {
-    'asked_questions': [],  # Các kỹ năng đã hỏi
-    'skills_data': DataScienceModel(**{field: 0 for field in DataScienceModel.__annotations__})  # Khởi tạo dữ liệu kỹ năng mặc định
-}
 
-def collect_industry(message):
-    global industry
-    if message in industry_skill_map.keys():
-        industry = message
-        global required_skills, skills_to_ask
-        required_skills = [key for key, value in industry_skill_map.get(industry).model_dump().items() if value != 0]
+def collect_industry(customer_data, field, job_want, customer_id="C00001"):
+    required_skills = Recommendation_model(
+        CustomerData=customer_data,
+        Field=field,
+        Jobwant=job_want,
+        CustomerID=customer_id,
+        model="Miss_skill")
         # Lấy danh sách kỹ năng cần hỏi
-        skills_to_ask = [skill for skill in required_skills]
-        return f"Ngành nghề '{industry}' đã được chọn. Vui lòng cung cấp kỹ năng của bạn."
-    else:
-        return f"Ngành nghề '{message}' không được hỗ trợ."
+    return required_skills
 
 
 def collect_user_skills(skill_to_ask):
-    global industry
     print(f"Đang hỏi về kỹ năng: {skill_to_ask}")
     system_instruction = f"""
             Bạn là một hệ thống AI thu thập thông tin về kỹ năng. Hãy hỏi người dùng về mức độ thành thạo của họ với kỹ năng '{skill_to_ask}'.
@@ -111,13 +45,12 @@ def collect_user_skills(skill_to_ask):
             contents='',  # Use the 'message' parameter here
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
-                # response_mime_type='application/json',  
             )
         )
     return response.text
-
     
-def process_user_input(message):
+
+def process_user_input(message, model):
     system_instruction = f"""
         Bạn là một hệ thống AI phân tích về kĩ năng. 
         Bạn sẽ thu thập thông tin người dùng về các kĩ năng của họ.
@@ -136,25 +69,265 @@ def process_user_input(message):
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
             response_mime_type='application/json',
-            response_schema=DSProcessModel,
+            response_schema=model,
         )
     )
     return response.text 
 
 # Hàm xử lý chênh lệch kỹ năng
-def calculate_skill_gap(user_skills, required_skills):
+def calculate_skill_gap(user_skills):
     skill_gap = {}
     user_skills = json.loads(user_skills)
-    for skill, required_level in required_skills.items():
-        if required_level != 0:
-            user_level = user_skills.get(skill, 0)
-            skill_gap[skill] = required_level - user_level
-    return skill_gap
+    
+    # Generate system instruction for AI
+    system_instruction = """
+        Bạn là một hệ thống AI phân tích chênh lệch kỹ năng. 
+        Dựa trên kỹ năng người dùng cung cấp, hãy đánh giá mức độ chênh lệch và đưa ra gợi ý cải thiện.
+        Đối với mỗi kỹ năng, nếu mức độ chưa đạt yêu cầu, hãy đề xuất cách cải thiện cụ thể.
+    """
+    # Prepare input for AI
+    input_data = {
+        "user_skills": user_skills
+    }
+    
+    # Use AI client to generate recommendations
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=json.dumps(input_data),
+        config=types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            response_mime_type='application/json'
+        )
+    )
+    return response.text    
+
+    # # Parse AI response
+    # recommendations = json.loads(response.text)
+    
+    # # Process recommendations and calculate skill gap
+    # for skill, details in recommendations.items():
+    #     required_level = details.get("required_level", 0)
+    #     user_level = user_skills.get(skill, 0)
+    #     if required_level > user_level:
+    #         skill_gap[skill] = {
+    #             "gap": required_level - user_level,
+    #             "recommendation": details.get("recommendation", "No recommendation available")
+    #         }
+    
+    # return skill_gap
 
 # Hàm hiển thị chênh lệch kỹ năng
-def display_skill_gap(skill_gap):
-    result = "Chênh lệch kỹ năng:\n"
-    for skill, gap in skill_gap.items():
-        result += f"- {skill}: {'Đạt yêu cầu' if gap <= 0 else f'Cần cải thiện {gap} điểm'}\n"
-    return result
+def further_qna(skill_name, context):
+    """
+    Function to generate a Q&A session for a specific skill based on the provided context.
+    
+    Args:
+        skill_name (str): The name of the skill to inquire about.
+        context (str): The context or additional information to guide the Q&A session.
+    
+    Returns:
+        str: The AI-generated response for the Q&A session.
+    """
+    system_instruction = f"""
+        Bạn là một hệ thống AI hỗ trợ người dùng cải thiện kỹ năng cá nhân. 
+        Hãy hỏi người dùng về kỹ năng '{skill_name}' trong bối cảnh sau: {context}.
+        Đưa ra các câu hỏi cụ thể để hiểu rõ hơn về mức độ thành thạo của họ và cung cấp gợi ý cải thiện.
+        Hãy sử dụng thang điểm từ 1 đến 5 để đánh giá mức độ thành thạo của họ:
+            1. Không biết
+            2. Biết một chút
+            3. Biết
+            4. Biết nhiều
+            5. Thành thạo
+        Đảm bảo rằng các câu hỏi ngắn gọn, dễ hiểu và phù hợp với bối cảnh.
+    """
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=f"Hỏi về kỹ năng: {skill_name}",
+        config=types.GenerateContentConfig(
+            system_instruction=system_instruction,
+        )
+    )
+    return response.text
 
+
+
+# ################################
+
+import re  # Import required libraries
+import pandas as pd
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.cluster import KMeans
+from sklearn.feature_extraction.text import TfidfVectorizer
+import warnings
+warnings.filterwarnings("ignore")
+import os 
+from typing import List
+base_dir = os.path.dirname(os.path.abspath(__file__))
+jobs_path = os.path.join(base_dir, 'Jobs.xlsx')
+skill_path = os.path.join(base_dir, 'Skill.xlsx')
+
+def Pre(df):
+    # Lấy tên cột cuối cùng
+    last_column = df.columns[-1]
+    
+    # Hàm xử lý văn bản
+    def clean_text(text):
+        # Chuyển thành chữ thường
+        text = text.lower()
+        # Thay thế các ký tự đặc biệt bằng khoảng trắng
+        text = text.replace("'", " ")
+        text = text.replace('"', " ")
+        text = text.replace("(", " ")
+        text = text.replace(")", " ")
+        text = text.replace("[", " ")
+        text = text.replace("]", " ")
+        text = text.replace("{", " ")
+        text = text.replace("}", " ")
+        text = text.replace("!", " ")
+        text = text.replace("?", " ")
+        text = text.replace(":", " ")
+        text = text.replace(";", " ")
+        text = text.replace(",", " ")
+        text = text.replace(".", " ")
+        text = text.replace("-", " ")
+        text = text.replace("_", " ")
+        text = text.replace("+", " ")
+        text = text.replace("=", " ")
+        text = text.replace("*", " ")
+        text = text.replace("&", " ")
+        text = text.replace("^", " ")
+        text = text.replace("%", " ")
+        text = text.replace("$", " ")
+        text = text.replace("#", " ")
+        text = text.replace("@", " ")
+        text = text.replace("~", " ")
+        text = text.replace("`", " ")
+        text = text.replace("|", " ")
+        text = text.replace("<", " ")
+        text = text.replace(">", " ")
+        text = text.replace("/", " ")
+        text = text.replace("\\", " ")
+        return text
+    
+    # Áp dụng xử lý văn bản cho cột cuối cùng
+    df[last_column] = df[last_column].apply(clean_text)
+    return df
+
+def Recommendation_model(CustomerData, Field, Jobwant, CustomerID="C00001", model="Miss_skill"):
+    # Load data from Excel files
+    df_job = pd.read_excel(jobs_path, sheet_name=Field)  # Update with the correct path
+    df_skill = pd.read_excel(skill_path)  # Update with the correct path
+
+    # Remove duplicate skills
+    df_skill = df_skill.drop_duplicates(subset='Skill', keep='first').reset_index(drop=True)
+
+    # Create skill description column
+    df_skill['Skill_Description'] = df_skill['Skill'] + " " + df_skill['Description'] + df_skill['Skill'] + df_skill['Skill']
+
+    # Preprocess data using custom Pre function
+    df_job = Pre(df_job)
+    df_skill = Pre(df_skill)
+
+    # Function to vectorize skills using TF-IDF
+    def vectorize_tfidf(df_skills):
+        tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+        tfidf_matrix = tfidf_vectorizer.fit_transform(df_skills['Skill_Description'])
+        return tfidf_matrix, tfidf_vectorizer
+
+    # Function to recommend skills based on customer data
+    def recommend(customer_data, tfidf_matrix, tfidf_vectorizer, df_skill, threshold=0.0001):
+        customer_vector = tfidf_vectorizer.transform([customer_data])
+        similarity_scores = cosine_similarity(customer_vector, tfidf_matrix).flatten()
+        relevant_indices = np.where(similarity_scores > threshold)[0]
+        sorted_indices = relevant_indices[np.argsort(similarity_scores[relevant_indices])[::-1]]
+        sorted_scores = similarity_scores[sorted_indices]
+        skill_names = df_skill.iloc[sorted_indices]['Skill'].values
+        return skill_names, sorted_scores
+
+    # Function to cluster data
+    def cluster_data(df, n_clusters=2):
+        try:
+            X = df[['Similarity Score']]
+            kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+            df['Cluster'] = kmeans.fit_predict(X)
+            cluster_0 = df[df['Cluster'] == 0]
+            cluster_1 = df[df['Cluster'] == 1]
+            return cluster_0, cluster_1
+        except Exception as e:
+            return df, df
+
+    # Function to select cluster with higher similarity score
+    def max_cluster(cluster_0_df, cluster_1_df):
+        if cluster_0_df['Similarity Score'].max() > cluster_1_df['Similarity Score'].max():
+            return cluster_0_df
+        else:
+            return cluster_1_df
+
+    # Function to get skills from greater cluster
+    def get_greater_cluster_list(greater_cluster):
+        greater_cluster_list = greater_cluster['Skill'].tolist()
+        return greater_cluster_list
+
+    # Function to update DataFrame row with skills
+    def update_new_df_row(new_df, i, List_greater_cluster):
+        for ni in range(1, new_df.shape[1]):
+            new_df.iloc[i, ni] = 1 if new_df.columns[ni] in List_greater_cluster else 0
+        return new_df
+
+    # Function to process job descriptions and create skill matrix
+    def process_job_descriptions(df_job, df_skill, tfidf_matrix, tfidf_vectorizer, threshold=0.0001):
+        skills = df_skill['Skill'].tolist()
+        new_df = df_job[['Job Title']].copy()
+        for skill in skills:
+            new_df[skill] = 0
+        for job_description, i in zip(df_job.iloc[:, -1], range(new_df.shape[0])):
+            top_skills, scores = recommend(job_description, tfidf_matrix, tfidf_vectorizer, df_skill, threshold)
+            recommended_skills_df = pd.DataFrame({
+                'Skill': top_skills,
+                'Similarity Score': scores
+            })
+            cluster_0_df, cluster_1_df = cluster_data(recommended_skills_df)
+            greater_cluster = max_cluster(cluster_0_df, cluster_1_df)
+            List_greater_cluster = get_greater_cluster_list(greater_cluster)
+            update_new_df_row(new_df, i, List_greater_cluster)
+        job_skill_matrix = new_df.copy()
+        return job_skill_matrix
+
+    # Vectorize skills and get recommended skills for customer
+    tfidf_matrix, tfidf_vectorizer = vectorize_tfidf(df_skill)
+    top_skills, scores = recommend(CustomerData, tfidf_matrix, tfidf_vectorizer, df_skill)
+    recommended_skills_df = pd.DataFrame({
+        'Skill': top_skills,
+        'Similarity Score': scores
+    })
+
+    # Cluster recommended skills
+    cluster_0_df, cluster_1_df = cluster_data(recommended_skills_df)
+    greater_cluster = max_cluster(cluster_0_df, cluster_1_df)
+    List_greater_cluster = get_greater_cluster_list(greater_cluster)
+
+    # Process job descriptions to create skill matrix
+    job_skill_matrix = process_job_descriptions(df_job, df_skill, tfidf_matrix, tfidf_vectorizer, threshold=0.0001)
+
+    # Get jobwant row from skill matrix
+    jobwant_row = job_skill_matrix[job_skill_matrix['Job Title'] == Jobwant]
+
+    # Create customer skill DataFrame
+    skills = df_skill['Skill'].tolist()
+    customer_skill_df = pd.DataFrame(columns=["Job Title"] + skills)
+    customer_skill_df.loc[0] = [Jobwant] + [0] * len(skills)
+    customer_skill_df = update_new_df_row(customer_skill_df, 0, List_greater_cluster)
+
+    # Merge customer skills with job skills
+    job_skill_matrix = job_skill_matrix.loc[:, ~job_skill_matrix.columns.duplicated()]
+    customer_skill_df['Job Title'] = customer_skill_df['Job Title'] + " " + CustomerID
+    job_skill_similarity = pd.concat([jobwant_row, customer_skill_df], ignore_index=True)
+
+    # Calculate missing skills
+    row1 = job_skill_similarity.iloc[0, 1:]
+    row2 = job_skill_similarity.iloc[1, 1:]
+    difference = row1 - row2
+    Miss_skill = difference[difference == 1].index.tolist()
+
+    return Miss_skill
