@@ -31,11 +31,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'customer_data': None,
             'skills_to_ask': [],
             'model': None,
+            'asked' : False,
         }
         self.context = ""  # Store only strings
         await self.accept()
         # Send initial greeting
         greeting = "Chào mừng bạn đến với hệ thống! Bạn muốn hoạt động trong lĩnh vực nào?"
+        
         self.context += greeting  # Append the greeting to the context
         await self.send(text_data=json.dumps({"message": greeting}))
 
@@ -46,12 +48,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         message = data.get('message', '').strip()
         response_data = ""
-
-        if message:
+        response_qna = ""
+        if message and self.session_state['asked'] == False:
             self.context += message  # Append only the user message as a string
 
             # Notify client that processing has started
-            await self.send(text_data=json.dumps({"loading": True}))
             if self.session_state['field'] is None and message in field_list:
                 self.session_state['field'] = message
                 response_data = f"Lĩnh vực {message} đã được chọn."
@@ -86,13 +87,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 self.session_state['skills_to_ask'] = skills_to_ask
                 time.sleep(5)
                 ##### Những kĩ 
-                response_data = f"Những kỹ năng cần thiết cho vị trí {self.session_state['job_want']} là: {skills_to_ask}. Bây giờ tôi sẽ hỏi bạn về các kĩ năng cần thiết cho vị trí {self.session_state['job_want']}. Hãy nhấn 'OK' để tiếp tục."    
+                response_data = f"Những kỹ năng cần thiết cho vị trí {self.session_state['job_want']} là: {skills_to_ask}. Bây giờ tôi sẽ hỏi bạn về trình độ của bản trong các kĩ năng này. Hãy nhấn 'OK' để tiếp tục."    
 
                 # Tạo model Pydantic để lưu kỹ năng
                 self.session_state['model'] = create_skills_model(skills_to_ask)
                 skills_to_ask.append(skills_to_ask[-1])  # Append the last skill to the list
                 self.session_state['skills_to_ask'] = skills_to_ask
-            elif self.session_state['skills_to_ask']:
+            elif self.session_state['skills_to_ask'] and self.session_state['asked'] == False:
                 # Nếu danh sách skills_to_ask đã có, hỏi người dùng về kỹ năng đầu tiên
                 current_skill = self.session_state['skills_to_ask'][0]
                 skill_response = collect_user_skills(current_skill)
@@ -101,12 +102,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
                 # Nếu đã hỏi hết kỹ năng, chuyển sang xử lý chênh lệch kỹ năng
                 if self.session_state['skills_to_ask'] == []:
-                    print(skill_response)
                     user_skills = process_user_input(self.context, self.session_state['model'])
                     skill_gap = calculate_skill_gap(user_skills)
                     skill_gap = json.dumps(skill_gap, indent=4, ensure_ascii=False)  # Convert to JSON string
-                    response_data = skill_gap
+                    response_qna = skill_gap
+                    self.session_state['asked'] = True
+        else:   
+                # Nếu đã hỏi hết kỹ năng, chuyển sang xử lý chênh lệch kỹ năng
+            skill_response = further_qna(message, self.context)
+            response_qna = skill_response
 
         # Notify client that processing has ended and send the response
         self.context += response_data
         await self.send(text_data=json.dumps({"loading": False, "message": response_data}))
+        await self.send(text_data=json.dumps({"loading": False, "response_qna": response_qna}))

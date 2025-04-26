@@ -9,8 +9,9 @@ from .utils import Recommendation_model
 # Định nghĩa cấu trúc dữ liệu cho các kỹ năng
 
 
-# Khởi tạo API key và client Google GenAI
-apikey = "AIzaSyCC_s9QxeNr2bOSW_ovqHYdJH65MJIQdow"
+# # Khởi tạo API key và client Google GenAI
+# apikey = "AIzaSyCC_s9QxeNr2bOSW_ovqHYdJH65MJIQdow"
+apikey = 'AIzaSyDtmMJ8WeUZsgYpkpN3vzy70AoSmynzGOQ'
 client = genai.Client(api_key=apikey)
 
 
@@ -28,20 +29,26 @@ def collect_industry(customer_data, field, job_want, customer_id="C00001"):
 def collect_user_skills(skill_to_ask):
     print(f"Đang hỏi về kỹ năng: {skill_to_ask}")
     system_instruction = f"""
-            Bạn là một hệ thống AI thu thập thông tin về kỹ năng. Hãy hỏi người dùng về mức độ thành thạo của họ với kỹ năng '{skill_to_ask}'.
-            Câu hỏi ngắn gọn và phải chứa thông tin về {skill_to_ask}.
-            Hãy sử dụng thang điểm từ 1 đến 5 để đánh giá mức độ thành thạo của họ.
-            1. Không biết
-            2. Biết một chút
-            3. Biết
-            4. Biết nhiều
-            5. Thành thạo
-            Hãy tôn trọng quyền riêng tư và bảo mật của người dùng.
-            Hãy hỏi người dùng về mức độ thành thạo của họ với từng kỹ năng một.
-            Hãy đảm bảo rằng bạn không hỏi quá nhiều câu hỏi một lúc và hãy lắng nghe phản hồi của người dùng.
-        """
+        Bạn là một hệ thống AI thu thập thông tin về kỹ năng. 
+        Nhiệm vụ của bạn là hỏi người dùng về mức độ thành thạo kỹ năng '{skill_to_ask}' bằng một câu ngắn gọn, rõ ràng.
+
+        Khi hỏi, hãy mô tả chi tiết các mức độ thành thạo sau:
+        1. Không biết: Không có kiến thức hoặc kinh nghiệm.
+        2. Biết một chút: Hiểu biết cơ bản hoặc từng tiếp xúc.
+        3. Biết: Có thể sử dụng ở mức trung bình.
+        4. Biết nhiều: Thành thạo trong các tình huống thông thường.
+        5. Thành thạo: Sử dụng xuất sắc và chuyên nghiệp.
+
+        Đồng thời, hãy giải thích ngắn gọn về kỹ năng '{skill_to_ask}' kèm ví dụ thực tế về kĩ năng, công cụ sử dụng từ cơ bản đến nâng cao.
+
+        Ghi nhớ:
+        - Tôn trọng quyền riêng tư và bảo mật thông tin cá nhân.
+        - Chỉ hỏi từng kỹ năng một lần.
+        - Không hỏi quá nhiều nội dung cùng lúc.
+        - Chờ phản hồi từ người dùng trước khi hỏi tiếp.
+    """
     response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.0-flash-lite-001",
             contents='',  # Use the 'message' parameter here
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
@@ -117,7 +124,7 @@ def calculate_skill_gap(user_skills):
     # return skill_gap
 
 # Hàm hiển thị chênh lệch kỹ năng
-def further_qna(skill_name, context):
+def further_qna(message, context):
     """
     Function to generate a Q&A session for a specific skill based on the provided context.
     
@@ -129,20 +136,19 @@ def further_qna(skill_name, context):
         str: The AI-generated response for the Q&A session.
     """
     system_instruction = f"""
-        Bạn là một hệ thống AI hỗ trợ người dùng cải thiện kỹ năng cá nhân. 
-        Hãy hỏi người dùng về kỹ năng '{skill_name}' trong bối cảnh sau: {context}.
-        Đưa ra các câu hỏi cụ thể để hiểu rõ hơn về mức độ thành thạo của họ và cung cấp gợi ý cải thiện.
-        Hãy sử dụng thang điểm từ 1 đến 5 để đánh giá mức độ thành thạo của họ:
-            1. Không biết
-            2. Biết một chút
-            3. Biết
-            4. Biết nhiều
-            5. Thành thạo
-        Đảm bảo rằng các câu hỏi ngắn gọn, dễ hiểu và phù hợp với bối cảnh.
+    Bạn là một hệ thống AI hỗ trợ người dùng cải thiện kỹ năng cá nhân. 
+    Người dùng đang muốn cải thiện kỹ năng: {message}. 
+
+    Yêu cầu:
+    1. Phân tích kỹ năng thành các kỹ năng con (sub-skills) cần nắm vững.
+    2. Gợi ý lộ trình học chi tiết cho từng kỹ năng con (theo cấp độ từ cơ bản → nâng cao).
+    3. Đưa ra các nguồn học cụ thể: khóa học online, website, sách hoặc nền tảng miễn phí.
+    4. Gợi ý từ khóa tìm kiếm bằng tiếng Anh và tiếng Việt để người dùng dễ tự học trên Google/YouTube.
+    5. Giữ câu trả lời ngắn gọn, trực quan và dễ hành động. Không viết chung chung, không dùng câu rườm rà.
     """
     response = client.models.generate_content(
         model="gemini-2.0-flash",
-        contents=f"Hỏi về kỹ năng: {skill_name}",
+        contents='',
         config=types.GenerateContentConfig(
             system_instruction=system_instruction,
         )
